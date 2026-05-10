@@ -5,6 +5,9 @@
 <title>테트리스</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  #lives-display { font-size: 20px; letter-spacing: 4px; }
+  .life-full  { color: #e94560; }
+  .life-empty { color: #333; }
   body {
     background: #1a1a2e;
     display: flex;
@@ -102,6 +105,10 @@
       <p id="lines">0</p>
     </div>
     <div class="panel">
+      <h3>목숨</h3>
+      <div id="lives-display"></div>
+    </div>
+    <div class="panel">
       <h3>다음</h3>
       <canvas id="next-canvas" width="100" height="100"></canvas>
     </div>
@@ -141,7 +148,8 @@ const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
 const nCtx = nextCanvas.getContext('2d');
 
-let board, piece, nextPiece, score, level, lines, gameOver, paused, dropTimer, dropInterval, animId;
+const MAX_LIVES = 3;
+let board, piece, nextPiece, score, level, lines, lives, gameOver, paused, dropInterval, animId;
 
 function createBoard() {
   return Array.from({length: ROWS}, () => Array(COLS).fill(0));
@@ -182,13 +190,38 @@ function place() {
     for (let c = 0; c < piece.shape[r].length; c++)
       if (piece.shape[r][c]) {
         const ny = piece.y + r;
-        if (ny < 0) { endGame(); return; }
+        if (ny < 0) { loseLife(); return; }
         board[ny][piece.x + c] = piece.shape[r][c];
       }
   clearLines();
   piece = nextPiece;
   nextPiece = randomPiece();
-  if (!valid(piece.shape, piece.x, piece.y)) endGame();
+  if (!valid(piece.shape, piece.x, piece.y)) loseLife();
+}
+
+function loseLife() {
+  lives--;
+  updateUI();
+  if (lives <= 0) { endGame(); return; }
+  paused = true;
+  let count = 0;
+  const id = setInterval(() => {
+    if (count % 2 === 0) {
+      ctx.fillStyle = 'rgba(233,69,96,0.55)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    } else {
+      draw();
+    }
+    count++;
+    if (count >= 8) {
+      clearInterval(id);
+      board = createBoard();
+      piece = randomPiece();
+      nextPiece = randomPiece();
+      paused = false;
+      lastTime = performance.now();
+    }
+  }, 120);
 }
 
 function clearLines() {
@@ -286,6 +319,10 @@ function updateUI() {
   document.getElementById('score').textContent = score.toLocaleString();
   document.getElementById('level').textContent = level;
   document.getElementById('lines').textContent = lines;
+  document.getElementById('lives-display').innerHTML =
+    Array.from({length: MAX_LIVES}, (_, i) =>
+      `<span class="${i < lives ? 'life-full' : 'life-empty'}">♥</span>`
+    ).join('');
 }
 
 let lastTime = 0;
@@ -303,7 +340,7 @@ function loop(ts) {
 
 function startGame() {
   board = createBoard();
-  score = 0; level = 1; lines = 0;
+  score = 0; level = 1; lines = 0; lives = MAX_LIVES;
   dropInterval = 1000;
   gameOver = false; paused = false;
   piece = randomPiece();
@@ -320,6 +357,7 @@ function endGame() {
   const overlay = document.getElementById('overlay');
   overlay.innerHTML = `
     <h2>게임 오버</h2>
+    <p style="font-size:22px;color:#e94560;letter-spacing:4px">♥♥♥</p>
     <p>점수: ${score.toLocaleString()} | 레벨: ${level} | 줄: ${lines}</p>
     <button id="start-btn" onclick="startGame()">다시 시작</button>
   `;
