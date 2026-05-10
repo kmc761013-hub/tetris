@@ -4,17 +4,10 @@
 <meta charset="UTF-8">
 <title>테트리스</title>
 <style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
   #lives-display { font-size: 20px; letter-spacing: 4px; }
   .life-full  { color: #e94560; }
   .life-empty { color: #333; }
-  @keyframes flash-red {
-    0%,100% { opacity: 1; }
-    50%      { opacity: 0.4; }
-  }
-  .flashing { animation: flash-red 0.15s steps(1) 6; }
-</style>
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: #1a1a2e;
     display: flex;
